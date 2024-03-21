@@ -5,50 +5,143 @@ format: html
 
 ```{r}
 library(tidyverse)
-download.file("https://raw.githubusercontent.com/KUBDatalab/R-PUFF/main/data/FEV.csv", "data/fev.csv", mode = "wb")
+# download.file("https://raw.githubusercontent.com/KUBDatalab/R-PUFF/main/data/FEV.csv", "data/fev.csv", mode = "wb")
 ```
+## Data
+
+Ingen har givet os data. Så her er noget data på lungevolumen hos børn/unge 
+i alderen 3-19, både rygere og ikke rygere, og af begge køn. Højden 
+har vi også. Højde er i tommer. Volumen tror vi nok er i liter.
+
 ```{r}
 fev <- read_csv("data/fev.csv")
+summary(fev)
+
 ```
 
-
-## linear model functions
-```{r}
-model <- lm(FEV ~ Hgt, data = fev)
-anova(model)
-summary(model)
-```
-```{r}
-anova(model)
-```
 ## scatterplot analysis
+
+Vi ved ikke helt hvad en "scatterplot analysis" er. Men her er et scatterplot:
 
 ```{r}
 fev %>% ggplot(aes(x=Hgt, y = FEV)) +
-  geom_point() +
-  geom_smooth()
+  geom_point() 
 ```
+Det får os til at tro at der måske er en lineær sammenhæng mellem højde og lungevolumen.
 
+## En ret linie
+
+ggplot kan lave det direkte. Men husk at sætte "method" i geom_smooth:
 ```{r}
 fev %>% ggplot(aes(x=Hgt, y = FEV)) +
   geom_point() +
   geom_smooth(method = "lm")
 ```
+
+
+## Sådan en linie har en ligning
+
+$$y = ax + b$$
+
+
+Or:
+
+$$FEV = aHgt + b$$
+a er hældningen (slope). b is the intercept between the line and the y-axis.
+
+R can find slope and intercept for us:
+
+
+
+```{r}
+model <- lm(FEV ~ Hgt, data = fev)
+model
+```
+
+Read the formula as: FEV is a function of Hgt. Hgt is the independent variabel. FEV the dependent. But this is not a statistics course, you can read about that in your textbook. Intercept is -5.433. Try to guess what value the slope has.
+
+
+What else:
+
+```{r}
+summary(model)
+```
+Here we get the p-values of the estimates of intercept and slope, handily coded with *** to indicate different levels of significance $\alpha$.
+
+We also get a $R^2$ value describing the propotion of the variability of the data described by the model.
+
+
+In general it is a good idea to take a look at the residuals:
+
+```{r}
+hist(model$residuals)
+```
+The residuals should be normal distributed (one of the assumptions of the
+linear regression, but we assume that has been covered in the textbook).
+
+Also take a look at the actual residuals, comparing the predicted values
+with the residuals:
+```{r}
+
+plot(fitted(model), model$residuals)
+
+```
+If there is a pattern in the residuals it is an indication that there is more signal in the data than we found with the model. Here it looks like there is something happening in the higher end of FEV - the dispersion of the values is qualitatively different in the two ends of the fit.
+
+
+Maybe that dispersion at the end is due to Sex?
+
+We can make the previous plot, just colored by Sex (Sex is recorded as
+0's and 1's). We need to coeerce Sex to a categorical variable using `factor()`:
+
 ```{r}
 fev %>% ggplot(aes(x=Hgt, y = FEV, color = factor(Sex))) +
   geom_point() +
   geom_smooth(method = "lm")
 ```
+The dispersion is probably not related to Sex. We almost only have boys/men with a height above ~70 inches. And we see a large variability amongst them, i overensstemmelse med den større variabilitet vi ser blandt mænd i snart sagt alle sammenhænge.
+
+## might it be age - multiple regression!
+
+Maybe FEV is dependent on both Height **and** Age?
+```{r}
+
+
+model2 <- lm(FEV ~Age + Hgt , data = fev)
+model2 %>% summary()
+```
+In the simpler model Adjusted R-squared was 
+0.7533. This larger model represents a slight improvement.
+
+$$FEV = \beta_2Age + \beta_1Hgt + \beta_0$$
+
+What if we only look at the girls?
+
 
 ```{r}
-data <- fev %>% mutate(Sex = factor(Sex))
-lm(FEV ~ Age + Hgt:factor(Sex), data = data)  %>% summary()
-data$Sex
+lm(FEV ~Age + Hgt , data = fev %>% filter(Sex == 0)) %>% summary()
+```
+Adjusted R^2 is worse!
+
+
+and for the men/boys?
+```{r}
+lm(FEV ~Age + Hgt , data = fev %>% filter(Sex == 1)) %>% summary()
 ```
 
+It actually gets better. 
+
+## Can we make a model where we bake in Sex?
+
+
+
+
+
 ```{r}
-model2 <- lm(FEV ~Age + Hgt*factor(Sex), data = fev)
-model2
+
+lm(FEV ~ Age:factor(Sex) + Hgt:factor(Sex) + Age*Hgt, data = fev)  %>% summary()
+
+
 ```
 
 
@@ -79,6 +172,8 @@ log(1000, 3.141)
 
 log(c(0.25, 4))
 ```
+
+
 ```{r}
 mydata <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
 
