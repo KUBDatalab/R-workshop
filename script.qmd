@@ -1,0 +1,103 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+download.file("https://raw.githubusercontent.com/KUBDatalab/R-PUFF/main/data/FEV.csv", "data/fev.csv", mode = "wb")
+```
+```{r}
+fev <- read_csv("data/fev.csv")
+```
+
+
+## linear model functions
+```{r}
+model <- lm(FEV ~ Hgt, data = fev)
+anova(model)
+summary(model)
+```
+```{r}
+anova(model)
+```
+## scatterplot analysis
+
+```{r}
+fev %>% ggplot(aes(x=Hgt, y = FEV)) +
+  geom_point() +
+  geom_smooth()
+```
+
+```{r}
+fev %>% ggplot(aes(x=Hgt, y = FEV)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+```{r}
+fev %>% ggplot(aes(x=Hgt, y = FEV, color = factor(Sex))) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+data <- fev %>% mutate(Sex = factor(Sex))
+lm(FEV ~ Age + Hgt:factor(Sex), data = data)  %>% summary()
+data$Sex
+```
+
+```{r}
+model2 <- lm(FEV ~Age + Hgt*factor(Sex), data = fev)
+model2
+```
+
+
+## regression techniques (such as linear and multiple regression analysis)
+## linear models
+
+
+
+
+## correlation matrix
+
+```{r}
+cor(fev)
+```
+```{r}
+library(corrplot)
+
+corrplot(cor(fev), bg = "black")
+```
+
+
+## non-linear model
+
+
+```{r}
+log10(c(2,10,100, 200, 3000)) 
+log(1000, 3.141)
+
+log(c(0.25, 4))
+```
+```{r}
+mydata <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
+
+```
+
+```{r}
+mydata$rank <- factor(mydata$rank)
+```
+```{r}
+myprobit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "probit"), 
+    data = mydata)
+
+mylogit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "logit"), 
+    data = mydata)
+```
+```{r}
+myprobit
+```
+```{r}
+mylogit
+```
+
