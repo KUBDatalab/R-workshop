@@ -115,13 +115,13 @@ In the simpler model Adjusted R-squared was
 
 $$FEV = \beta_2Age + \beta_1Hgt + \beta_0$$
 
-What if we only look at the girls?
+What if we only look at the girls/women?
 
 
 ```{r}
 lm(FEV ~Age + Hgt , data = fev %>% filter(Sex == 0)) %>% summary()
 ```
-Adjusted R^2 is worse!
+Adjusted $R^2$ is worse!
 
 
 and for the men/boys?
@@ -133,46 +133,101 @@ It actually gets better.
 
 ## Can we make a model where we bake in Sex?
 
+Now it get complicated enough that we really need to think about how to 
+explain it...
 
-
-
+It might be easier after looking at the result
 
 ```{r}
 
-lm(FEV ~ Age:factor(Sex) + Hgt:factor(Sex) + Age*Hgt, data = fev)  %>% summary()
-
+lm(FEV ~ Age:factor(Sex) + Hgt:factor(Sex) + Age*Hgt, data = fev)  
 
 ```
+The intercept is what it is.
 
+For each unit increase in Age, FEV decreases by 0.334. For each unit increase in
+Hgt FEV increases by 0.0534. factor(Sex)1:Hgt tells us, that boys/men "experience"
+a decrease in FEV of 0.00292 for each unit increase of Height. Or:
+Girls _and_ boys get an increase of FEV of 0.0534 for each inch of height. But 
+FEV for boys is corrected downwards by 0.00292. 
 
-## regression techniques (such as linear and multiple regression analysis)
-## linear models
+Similar with Age. Girls _and_ boys decrease their FEV with 0.334 for each year. But
+boys get an "compensatory" increase of 0.0303.
+
+Age:Hgt is a bit more complicated. We _multiply_ the age and height of both sexes - 
+a unit increase in _that_ value increses FEV with 0.00605. 
+
+Does the final bit make sense? Physiologically? No idea.
+
+Looking closer at the model result:
+
+```{r}
+lm(FEV ~ Age:factor(Sex) + Hgt:factor(Sex) + Age*Hgt, data = fev)  %>% summary()
+```
+The model is now so complicated that we see elements that are not significant.
+Maybe the model is too complicated.
+ 
 
 
 
 
 ## correlation matrix
-
+Pairwise correlations between the variables:
 ```{r}
 cor(fev)
 ```
+
+The diagonal is very uninteresting.
+
+We can get the pairwise $R^2$ directly:
+```{r}
+cor(fev)^2
+```
+
+We can visualise it:
+
 ```{r}
 library(corrplot)
 
 corrplot(cor(fev), bg = "black")
 ```
+We may need to play around with background color to even be able to see the
+small values.
+
+We think this function gives a nicer plot:
+```{r}
+library(GGally)
+ggpairs(fev, progress = F)
+```
 
 
 ## non-linear model
 
+We have already seen a non-linear model!
 
 ```{r}
-log10(c(2,10,100, 200, 3000)) 
-log(1000, 3.141)
+lm(FEV ~ Age:factor(Sex) + Hgt:factor(Sex) + Age*Hgt, data = fev)
+```
+We multiply Age and Hgt. That is not linear!
 
-log(c(0.25, 4))
+lm can still be used. A non-linear model is simply a linear model with non-linear
+dependent variables.
+
+```{r}
+lm(FEV ~ Age + Hgt + Sex, data = fev)
 ```
 
+If we want the polynomial expansion for fx Hgt (automagically):
+```{r}
+lm(FEV ~ poly(Hgt, 2, raw=TRUE), data=fev) %>% summary()
+
+```
+Or, if we want to control it more directly:
+```{r}
+lm(FEV ~ Hgt + I(Hgt^2), data = fev)
+```
+We need to encapsulate the quadratic expression in `I()` - otherwise R will
+try to interpret stuff before lm can do its math.
 
 ```{r}
 mydata <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
@@ -182,6 +237,7 @@ mydata <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
 ```{r}
 mydata$rank <- factor(mydata$rank)
 ```
+
 ```{r}
 myprobit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "probit"), 
     data = mydata)
@@ -189,6 +245,7 @@ myprobit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "probit"),
 mylogit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "logit"), 
     data = mydata)
 ```
+
 ```{r}
 myprobit
 ```
