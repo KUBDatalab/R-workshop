@@ -236,6 +236,7 @@ mydata <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
 
 ```{r}
 mydata$rank <- factor(mydata$rank)
+view(mydata)
 ```
 
 ```{r}
@@ -247,7 +248,7 @@ mylogit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "logit"),
 ```
 
 ```{r}
-myprobit
+myprobit %>% summary()
 ```
 ```{r}
 mylogit
